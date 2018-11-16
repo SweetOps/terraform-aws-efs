@@ -1,6 +1,6 @@
 output "id" {
   description = "ID of EFS"
-  value       = "${aws_efs_file_system.default.id}"
+  value       = "${join("", aws_efs_file_system.default.*.id)}"
 }
 
 output "host" {
@@ -9,8 +9,8 @@ output "host" {
 }
 
 output "dns_name" {
-  description = ""
-  value       = "${aws_efs_file_system.default.id}.efs.${local.region}.amazonaws.com"
+  description = "DNS name"
+  value       = "${join("", aws_efs_file_system.default.*.id)}.efs.${local.region}.amazonaws.com"
 }
 
 output "mount_target_ids" {
