@@ -11,7 +11,7 @@ module "label" {
   name       = "${var.name}"
   stage      = "${var.stage}"
   delimiter  = "${var.delimiter}"
-  attributes = "${concat(list("cidrs"), var.attributes)}"
+  attributes = "${var.attributes}"
   tags       = "${var.tags}"
   enabled    = "${var.enabled}"
 }
@@ -23,8 +23,9 @@ module "allowed_cidrs_label" {
   stage      = "${var.stage}"
   delimiter  = "${var.delimiter}"
   attributes = "${var.attributes}"
+  attributes = "${concat(list("cidrs"), var.attributes)}"
   tags       = "${var.tags}"
-  enabled    = "${var.enabled}"
+  enabled    = "${var.enabled == "true" && length(compact(var.allowed_cidrs)) > 0 ? "true" : "false"}"
 }
 
 resource "aws_efs_file_system" "default" {
@@ -39,7 +40,7 @@ resource "aws_efs_mount_target" "default" {
   count           = "${var.enabled == "true" ? length(compact(var.subnets)) : 0}"
   file_system_id  = "${aws_efs_file_system.default.id}"
   subnet_id       = "${element(compact(var.subnets), count.index)}"
-  security_groups = "${compact(concat(aws_security_group.default.id, aws_security_group.allowed_cidrs.id))}"
+  security_groups = ["${compact(concat(aws_security_group.default.*.id, aws_security_group.allowed_cidrs.*.id))}"]
 }
 
 resource "aws_security_group" "default" {
@@ -75,11 +76,11 @@ resource "aws_security_group_rule" "egress" {
 }
 
 resource "aws_security_group" "allowed_cidrs" {
-  count       = "${var.enabled == "true" ? 1 : 0}"
-  name        = "${module.allowed_cidrs.id}"
-  description = "All access to EFS from specefic CIDRs"
+  count       = "${var.enabled == "true" ? signum(length(compact(var.allowed_cidrs))) : 0}"
+  name        = "${module.allowed_cidrs_label.id}"
+  description = "Allow access to EFS from specefic CIDRs"
   vpc_id      = "${var.vpc_id}"
-  tags        = "${module.allowed_cidrs.tags}"
+  tags        = "${module.allowed_cidrs_label.tags}"
 
   lifecycle {
     create_before_destroy = true
