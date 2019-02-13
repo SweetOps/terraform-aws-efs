@@ -39,7 +39,6 @@ resource "aws_efs_mount_target" "default" {
   count           = "${var.enabled == "true" ? length(compact(var.subnets)) : 0}"
   file_system_id  = "${aws_efs_file_system.default.id}"
   subnet_id       = "${element(compact(var.subnets), count.index)}"
-  security_groups = ["${aws_security_group.default.id}", "${aws_security_group.allowed_cidrs.id}"]
   security_groups = "${compact(concat(aws_security_group.default.id, aws_security_group.allowed_cidrs.id))}"
 }
 
