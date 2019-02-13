@@ -11,6 +11,17 @@ module "label" {
   name       = "${var.name}"
   stage      = "${var.stage}"
   delimiter  = "${var.delimiter}"
+  attributes = "${concat(list("cidrs"), var.attributes)}"
+  tags       = "${var.tags}"
+  enabled    = "${var.enabled}"
+}
+
+module "allowed_cidrs_label" {
+  source     = "git::https://github.com/SweetOps/terraform-null-label.git?ref=tags/0.5.4"
+  namespace  = "${var.namespace}"
+  name       = "${var.name}"
+  stage      = "${var.stage}"
+  delimiter  = "${var.delimiter}"
   attributes = "${var.attributes}"
   tags       = "${var.tags}"
   enabled    = "${var.enabled}"
@@ -66,10 +77,10 @@ resource "aws_security_group_rule" "egress" {
 
 resource "aws_security_group" "allowed_cidrs" {
   count       = "${var.enabled == "true" ? 1 : 0}"
-  name        = "${module.label.id}"
+  name        = "${module.allowed_cidrs.id}"
   description = "All access to EFS from specefic CIDRs"
   vpc_id      = "${var.vpc_id}"
-  tags        = "${module.label.tags}"
+  tags        = "${module.allowed_cidrs.tags}"
 
   lifecycle {
     create_before_destroy = true
