@@ -16,6 +16,18 @@ module "label" {
   enabled    = "${var.enabled}"
 }
 
+module "allowed_cidrs_label" {
+  source     = "git::https://github.com/SweetOps/terraform-null-label.git?ref=tags/0.5.4"
+  namespace  = "${var.namespace}"
+  name       = "${var.name}"
+  stage      = "${var.stage}"
+  delimiter  = "${var.delimiter}"
+  attributes = "${var.attributes}"
+  attributes = "${concat(list("cidrs"), var.attributes)}"
+  tags       = "${var.tags}"
+  enabled    = "${var.enabled == "true" && length(compact(var.allowed_cidrs)) > 0 ? "true" : "false"}"
+}
+
 resource "aws_efs_file_system" "default" {
   count            = "${var.enabled == "true" ? 1 : 0}"
   performance_mode = "${var.performance_mode}"
@@ -28,7 +40,7 @@ resource "aws_efs_mount_target" "default" {
   count           = "${var.enabled == "true" ? length(compact(var.subnets)) : 0}"
   file_system_id  = "${aws_efs_file_system.default.id}"
   subnet_id       = "${element(compact(var.subnets), count.index)}"
-  security_groups = ["${aws_security_group.default.id}"]
+  security_groups = ["${compact(concat(aws_security_group.default.*.id, aws_security_group.allowed_cidrs.*.id))}"]
 }
 
 resource "aws_security_group" "default" {
@@ -61,6 +73,28 @@ resource "aws_security_group_rule" "egress" {
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = "${aws_security_group.default.id}"
+}
+
+resource "aws_security_group" "allowed_cidrs" {
+  count       = "${var.enabled == "true" ? signum(length(compact(var.allowed_cidrs))) : 0}"
+  name        = "${module.allowed_cidrs_label.id}"
+  description = "Allow access to EFS from specefic CIDRs"
+  vpc_id      = "${var.vpc_id}"
+  tags        = "${module.allowed_cidrs_label.tags}"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_security_group_rule" "allowed_cidrs" {
+  count             = "${var.enabled == "true" ? signum(length(compact(var.allowed_cidrs))) : 0}"
+  type              = "ingress"
+  from_port         = "2049"
+  to_port           = "2049"
+  protocol          = "tcp"
+  cidr_blocks       = "${var.allowed_cidrs}"
+  security_group_id = "${aws_security_group.allowed_cidrs.id}"
 }
 
 module "dns" {
