@@ -79,3 +79,8 @@ variable "enabled" {
   default     = "true"
   description = "Set to false to prevent the module from creating anything"
 }
+
+variable "allowed_cidrs" {
+  default     = []
+  description = "List of CIDR blocks"
+}
