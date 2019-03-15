@@ -17,7 +17,7 @@ module "label" {
 }
 
 module "allowed_cidrs_label" {
-  source     = "git::https://github.com/SweetOps/terraform-null-label.git?ref=tags/0.5.4"
+  source     = "git::https://github.com/SweetOps/terraform-null-label.git?ref=tags/0.6.0"
   namespace  = "${var.namespace}"
   name       = "${var.name}"
   stage      = "${var.stage}"
