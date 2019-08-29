@@ -6,7 +6,7 @@ locals {
 }
 
 module "label" {
-  source     = "git::https://github.com/SweetOps/terraform-null-label.git?ref=tags/0.5.4"
+  source     = "git::https://github.com/SweetOps/terraform-null-label.git?ref=tags/0.7.0"
   namespace  = "${var.namespace}"
   name       = "${var.name}"
   stage      = "${var.stage}"
